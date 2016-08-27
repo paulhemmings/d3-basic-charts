@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- tutorial :: https://bost.ocks.org/mike/bar/2/  -->
+    <!--             https://bost.ocks.org/mike/bar/3/  -->
+
+    <style>
+
+        .chart rect {
+          fill: steelblue;
+        }
+
+        .chart text {
+          fill: white;
+          font: 10px sans-serif;
+          text-anchor: end;
+        }
+
+        .axis text {
+          fill: black;
+          font: 10px sans-serif;
+        }
+
+        .axis path,
+        .axis line {
+          fill: none;
+          stroke: #000;
+          shape-rendering: crispEdges;
+        }
+
+
+    </style>
+</head>
+<body>
+        <!-- what is builds -->
+        <!--
+        <svg class="chart" width="420" height="120">
+          <g transform="translate(0,0)">
+            <rect width="40" height="19"></rect>
+            <text x="37" y="9.5" dy=".35em">4</text>
+          </g>
+          <g transform="translate(0,20)">
+            <rect width="80" height="19"></rect>
+            <text x="77" y="9.5" dy=".35em">8</text>
+          </g>
+          <g transform="translate(0,40)">
+            <rect width="150" height="19"></rect>
+            <text x="147" y="9.5" dy=".35em">15</text>
+          </g>
+          <g transform="translate(0,60)">
+            <rect width="160" height="19"></rect>
+            <text x="157" y="9.5" dy=".35em">16</text>
+          </g>
+          <g transform="translate(0,80)">
+            <rect width="230" height="19"></rect>
+            <text x="227" y="9.5" dy=".35em">23</text>
+          </g>
+          <g transform="translate(0,100)">
+            <rect width="420" height="19"></rect>
+            <text x="417" y="9.5" dy=".35em">42</text>
+          </g>
+        </svg>
+        -->
+
+        <label for='flipped'>Flip Chart</label>
+        <input type='checkbox' id='flipped' />
+        <br/>
+        <svg class="chart"></svg>
+
+        <script src="https://d3js.org/d3.v3.min.js"></script>
+        <script>
+
+        var chartFlipped = false;
+
+        document.getElementById('flipped').addEventListener('click', function() {
+            chartFlipped = !chartFlipped;
+            refreshChart();
+        });
+
+        function refreshChart() {
+            d3.selectAll("svg > *").remove();
+            d3.tsv("data.tsv", toNumberFn, chartFlipped ? buildVerticalChart : buildImpressiveHorizontalChart);
+        }
+
+        function toNumberFn(d) {
+          d.value = +d.value; // coerce to number
+          return d;
+        }
+
+        function buildHorizontalChart(error, data) {
+
+            var width = 960,
+                height = 500;
+
+            var y = d3.scale.linear()
+                .range([height, 0]);
+
+            var chart = d3.select(".chart")
+                .attr("width", width)
+                .attr("height", height);
+
+              y.domain([0, d3.max(data, function(d) { return d.value; })]);
+
+              var barWidth = width / data.length;
+
+              var bar = chart.selectAll("g")
+                  .data(data)
+                .enter().append("g")
+                  .attr("transform", function(d, i) { return "translate(" + i * barWidth + ",0)"; });
+
+              bar.append("rect")
+                  .attr("y", function(d) { return y(d.value); })
+                  .attr("height", function(d) { return height - y(d.value); })
+                  .attr("width", barWidth - 1);
+
+              bar.append("text")
+                  .attr("x", barWidth / 2)
+                  .attr("y", function(d) { return y(d.value) + 3; })
+                  .attr("dy", ".75em")
+                  .text(function(d) { return d.value; });
+        }
+
+        function buildVerticalChart(error, data) {
+            // var data = [4, 8, 15, 16, 23, 42, 50, 10];
+
+            var width = 420,
+                barHeight = 20;
+
+            var x = d3.scale.linear()
+                .range([0, width])
+                .domain([0, d3.max(data, function(d) { return d.value; })]);
+
+            var chart = d3.select(".chart")
+                .attr("width", width)
+                .attr("height", barHeight * data.length);
+
+            var bar = chart.selectAll("g")
+                    .data(data)
+                  .enter().append("g")
+                    .attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; });
+
+                bar.append("rect")
+                    .attr("width", function(d) { return x(d.value); })
+                    .attr("height", barHeight - 1);
+
+                bar.append("text")
+                    .attr("x", function(d) { return x(d.value) - 3; })
+                    .attr("y", barHeight / 2)
+                    .attr("dy", ".35em")
+                    .text(function(d) { return d.value; });
+        }
+
+        function buildImpressiveHorizontalChart(error, data) {
+
+            var margin = {top: 20, right: 30, bottom: 30, left: 40},
+                width = 960 - margin.left - margin.right,
+                height = 500 - margin.top - margin.bottom;
+
+            var x = d3.scale.ordinal()
+                .rangeRoundBands([0, width], .1)
+                .domain(data.map(function(d) { return d.name; }));
+
+            var y = d3.scale.linear()
+                .range([height, 0])
+                .domain([0, d3.max(data, function(d) { return d.value; })]);
+
+            var xAxis = d3.svg.axis()
+                .scale(x)
+                .orient("bottom");
+
+            var yAxis = d3.svg.axis()
+                .scale(y)
+                .orient("left");
+
+            var chart = d3.select(".chart")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+              .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            chart.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(xAxis);
+
+            chart.append("g")
+                .attr("class", "y axis")
+                .call(yAxis);
+
+            chart.selectAll(".bar")
+                .data(data)
+              .enter().append("rect")
+                .attr("class", "bar")
+                .attr("x", function(d) { return x(d.name); })
+                .attr("y", function(d) { return y(d.value); })
+                .attr("height", function(d) { return height - y(d.value); })
+                .attr("width", x.rangeBand());
+
+
+        }
+
+        refreshChart();
+
+
+
+        </script>
+</body>
+</html>

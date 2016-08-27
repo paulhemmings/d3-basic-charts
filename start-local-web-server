@@ -1,0 +1,9 @@
+# initialize
+# https://www.npmjs.com/package/http-server
+
+npm install http-server -g
+npm install jitsu -g
+
+jitsu install http-server
+
+node server/bin/http-server
